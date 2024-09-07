@@ -1,0 +1,77 @@
+line-length = 120
+
+exclude = ["**/__init__.py", "test/test_results.py"]
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 80
+
+[lint]
+select = [
+    "A",
+    "ARG",
+    "ASYNC",
+    "B",
+    "BLE",
+    "C",
+    "COM818",
+    "COM819",
+    "DTZ",
+    "E",
+    "EM",
+    "EXE",
+    "F",
+    "FA",
+    "FBT",
+    "FLY",
+    "G",
+    "I",
+    "ICN",
+    "INT",
+    "ISC002",
+    "ISC003",
+    "LOG",
+    "N",
+    "PERF",
+    "PGH",
+    "PIE",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "PT",
+    "PYI",
+    "RET",
+    "RSE",
+    "RUF00",
+    "RUF01",
+    "RUF020",
+    "RUF100",
+    "S1",
+    "S6",
+    "SIM",
+    "SLF",
+    "T10",
+    "T20",
+    "TCH",
+    "TD004",
+    "TD005",
+    "TD006",
+    "TD007",
+    "TID",
+    "TRY",
+    "UP",
+    "W2",
+    "W5",
+    "W6",
+]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[lint.isort]
+known-first-party = ["gdl_extractors"]
+
+[lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false

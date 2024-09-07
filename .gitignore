@@ -1,0 +1,11 @@
+*cache/
+__pycache__/
+*.pyc
+.coverage*
+
+dist/
+
+env
+.env
+venv
+.venv

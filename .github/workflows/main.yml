@@ -1,0 +1,111 @@
+name: main
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+  PIP_TRUSTED_HOST: "pypi.python.org pypi.org files.pythonhosted.org"
+
+jobs:
+  changes:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      extractors: ${{ steps.filter.outputs.extractors }}
+      extractors_files: ${{ steps.filter.outputs.extractors_files }}
+      core: ${{ steps.filter.outputs.core }}
+      modules_exist: ${{ steps.modules_exist.outputs.modules_exist }}
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Modules exist
+        id: modules_exist
+        run: |
+          for file in extractor/*.py test/results/*.py; do
+              filename=$(basename "${file}")
+              if [ "${filename}" != "__init__.py" ]; then
+                  echo "modules_exist=true" >> "${GITHUB_OUTPUT}"
+                  exit 0
+              fi
+          done
+          echo "modules_exist=false" >> "${GITHUB_OUTPUT}"
+
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
+        id: filter
+        with:
+          list-files: json
+          filters: |
+            extractors:
+              - added|modified: 'extractor/!(__init__).py'
+              - added|modified: 'test/results/!(__init__).py'
+            core:
+              - added|modified: '**/__init__.py'
+              - added|modified: 'test/test_results.py'
+
+  lint:
+    runs-on: ubuntu-22.04
+    needs: changes
+    if: needs.changes.outputs.extractors == 'true' || needs.changes.outputs.core == 'true'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+
+      - name: Lint
+        run: hatch fmt --check
+
+  test:
+    runs-on: ubuntu-22.04
+    needs: [changes, lint]
+    if: needs.changes.outputs.modules_exist == 'true'
+    permissions:
+      contents: read
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy3.9"]
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+
+      - name: Test all
+        if: needs.changes.outputs.core == 'true'
+        run: hatch test --python "${{ matrix.python-version }}"
+
+      - name: Test individual
+        if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false'
+        run: |
+          # Get unique extractor module names from the array of added/modified file paths
+          modules=($( jq -r 'map(match("/([^/]+)\\.py$").captures[0].string) | unique | join(" ")' <<< '${{ needs.changes.outputs.extractors_files }}' ))
+
+          for module in "${modules[@]}"; do
+            src_file="./extractor/${module}.py"
+            test_file="./test/results/${module}.py"
+
+            if [ ! -f "${src_file}" ]; then
+              echo "Error: Source file ${src_file} not found."
+              exit 1
+            fi
+
+            if [ ! -f "${test_file}" ]; then
+              echo "Error: Test file ${test_file} not found."
+              exit 1
+            fi
+
+            hatch test --python "${{ matrix.python-version }}" "${module}"
+          done
