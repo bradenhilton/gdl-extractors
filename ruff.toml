@@ -66,6 +66,9 @@ select = [
     "W6",
 ]
 
+[lint.per-file-ignores]
+"test/results/*" = ["E501"]
+
 [lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
