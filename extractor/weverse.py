@@ -101,7 +101,7 @@ class WeverseExtractor(Extractor):
         if not attachments:
             yield None
 
-        # the order of attachments in the api response can differ to the order
+        # The order of attachments in the API response can differ to the order
         # of attachments on the site
         attachment_order = text.extract_iter(post["body"], 'id="', '"')
         for index, attachment_id in enumerate(attachment_order, 1):
@@ -309,9 +309,6 @@ class WeverseMomentExtractor(WeverseExtractor):
         return self.api.get_post(self.post_id)
 
 
-####
-
-
 class WeverseMomentsExtractor(WeverseExtractor):
     """Extractor for all moments from a weverse community artist"""
 
@@ -374,9 +371,6 @@ class WeverseMediaTabExtractor(WeverseExtractor):
         medias = get_media(self.community_keyword)
         for media in medias:
             yield Message.Queue, media["shareUrl"], data
-
-
-##########
 
 
 class WeverseMediaCategoryExtractor(WeverseExtractor):
@@ -568,7 +562,7 @@ class WeverseAPI:
                 "wpf": "pc",
             },
         )
-        # the param order is important for the message digest
+        # The param order is important for the message digest
         params = OrderedDict(sorted(params.items()))
         timestamp = int(time.time() * 1000)
         message_digest = self._message_digest(endpoint, params, timestamp)
