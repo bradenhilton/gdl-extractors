@@ -67,8 +67,7 @@ select = [
 ]
 
 [lint.per-file-ignores]
-"test/results/*" = ["E501"]
-"test/results/topstarnews.py" = ["RUF001"]
+"test/results/*" = ["E501", "RUF001"]
 
 [lint.flake8-tidy-imports]
 ban-relative-imports = "all"
