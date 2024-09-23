@@ -32,7 +32,7 @@ class ImbcExtractor(Extractor):
         return {
             "title": text.unescape(text.extr(page, "<title>", "</title>")),
             "article_id": self.article_id,
-            "post_url": text.extr(page, 'proptery="og:url" content="', '"'),
+            "post_url": text.extr(page, 'property="og:url" content="', '"'),
         }
 
 
