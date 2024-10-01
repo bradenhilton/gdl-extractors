@@ -20,6 +20,7 @@ jobs:
       extractors: ${{ steps.filter.outputs.extractors }}
       extractors_files: ${{ steps.filter.outputs.extractors_files }}
       core: ${{ steps.filter.outputs.core }}
+      workflow: ${{ steps.filter.outputs.workflow }}
       modules_exist: ${{ steps.modules_exist.outputs.modules_exist }}
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
@@ -35,6 +36,7 @@ jobs:
               fi
           done
           echo "modules_exist=false" >> "${GITHUB_OUTPUT}"
+          exit 0
 
       - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
         id: filter
@@ -47,11 +49,13 @@ jobs:
             core:
               - added|modified: '**/__init__.py'
               - added|modified: 'test/test_results.py'
+            workflow:
+              - added|modified: '.github/workflows/main.yml'
 
   lint:
     runs-on: ubuntu-22.04
     needs: changes
-    if: needs.changes.outputs.extractors == 'true' || needs.changes.outputs.core == 'true'
+    if: needs.changes.outputs.extractors == 'true' || needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
     permissions:
       contents: read
       pull-requests: read
@@ -84,7 +88,7 @@ jobs:
       - uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
 
       - name: Test all
-        if: needs.changes.outputs.core == 'true'
+        if: needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
         run: hatch test --python "${{ matrix.python-version }}"
 
       - name: Test individual
@@ -109,3 +113,4 @@ jobs:
 
             hatch test --python "${{ matrix.python-version }}" "${module}"
           done
+          exit 0
