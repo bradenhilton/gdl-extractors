@@ -40,4 +40,15 @@ __tests__ = (
         "post_url": "https://www.news1.kr/photos/2734432",
         "filename": "2734432",
     },
+    {
+        "#url": "https://www.news1.kr/photos/6155497",
+        "#category": ("", "news1", "article"),
+        "#class": news1.News1ArticleExtractor,
+        "#pattern": IMAGE_URL_PATTERN,
+        "#count": 1,
+        "title": "조유리, 요염한 눈빛",
+        "article_id": "6155497",
+        "post_url": "https://www.news1.kr/photos/6155497",
+        "filename": "6155497",
+    },
 )

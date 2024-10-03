@@ -73,9 +73,8 @@ class News1ArticleExtractor(News1Extractor):
         json_data = json.loads(text.extr(page, '<script type="application/ld+json">', "</script>"))
         if isinstance(json_data, list):
             json_data = json_data[0]
-        return {
+        data = {
             "title": text.unescape(json_data.get("headLine")),
-            "author": json_data.get("author", [])[0].get("name", "").replace(" 기자", ""),
             "date": text.parse_datetime(
                 json_data.get("datePublished"),
                 format="%Y-%m-%dT%H:%M:%S%z",
@@ -83,6 +82,10 @@ class News1ArticleExtractor(News1Extractor):
             "article_id": self.article_id,
             "post_url": json_data.get("mainEntityOfPage"),
         }
+        author = json_data.get("author")
+        if author:
+            data["author"] = author[0].get("name", "").replace(" 기자", "")
+        return data
 
     def items(self):
         page = self._call(self.post_url)
