@@ -7,7 +7,7 @@ from http import HTTPStatus
 from gallery_dl import exception, text
 from gallery_dl.extractor.common import Extractor, Message
 
-BASE_PATTERN = r"(?:https?://)?www\.bntnews\.co\.kr"
+BASE_PATTERN = r"(?:https?://)?[a-z]+\.bntnews\.co\.kr"
 
 
 class BntnewsExtractor(Extractor):
