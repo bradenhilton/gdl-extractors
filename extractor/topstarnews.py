@@ -62,28 +62,10 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
                         '"',
                     )[0],
                 )
-                or text.parse_datetime(
-                    text.extr(
-                        page,
-                        '<i class="fa fa-clock-o fa-fw"></i>',
-                        "</li>",
-                    )
-                    .strip()
-                    .split(" ", maxsplit=1)[1],
-                    format="%Y.%m.%d %H:%M",
-                    utcoffset=9,
-                )
             ),
-            "author": text.extr(
-                page,
-                '<i class="fa fa-user-o fa-fw"></i>',
-                "</li>",
-            ).strip(),
-            "views": text.parse_int(
-                text.extr(page, '<i class="fa fa-desktop fa-fw"></i>', "</li>").strip().split(" ", maxsplit=1)[1],
-            ),
+            "author": text.extr(page, ' name="author" content="', '"').strip().replace(" 기자", ""),
             "post_id": self.post_id,
-            "post_url": self.url,
+            "post_url": self.post_url,
         }
         if ' name="keywords" content="' in page:
             data["tags"] = text.extr(page, ' name="keywords" content="', '"').split(",")
@@ -97,7 +79,7 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
 
         yield Message.Directory, data
 
-        article_body = text.extr(page, ' itemprop="articleBody">', '<div id="article-sns2"')
+        article_body = text.extr(page, 'itemprop="articleBody"', "</article>")
 
         images = [
             text.extr(figure, "<img", ">")
