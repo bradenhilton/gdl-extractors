@@ -5,7 +5,7 @@ from http import HTTPStatus
 from gallery_dl import exception, text
 from gallery_dl.extractor.common import Extractor, Message
 
-BASE_PATTERN = r"(?:https?://)?www\.osen\.co\.kr"
+BASE_PATTERN = r"(?:https?://)?(?:www\.)?osen\.co\.kr"
 
 
 class OsenExtractor(Extractor):
@@ -40,7 +40,7 @@ class OsenArticleExtractor(OsenExtractor):
     directory_fmt = ("{category}", "{article_id}")
     archive_fmt = "{article_id}_{filename}_{num}"
     pattern = BASE_PATTERN + r"/article/(G\d+)"
-    example = "https://www.osen.co.kr//article/G12345678910"
+    example = "https://www.osen.co.kr/article/G12345678910"
 
     def __init__(self, match):
         OsenExtractor.__init__(self, match)
