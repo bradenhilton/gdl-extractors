@@ -62,10 +62,11 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+      - uses: astral-sh/ruff-action@f14634c415d3e63ffd4d550a22f037df4c734a60
+        with:
+          version-file: pyproject.toml
 
-      - name: Lint
-        run: hatch fmt --check
+      - run: ruff format --check
 
   test:
     runs-on: ubuntu-22.04
@@ -77,7 +78,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy3.9"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -85,11 +86,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+      - uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355
 
       - name: Test all
         if: needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
-        run: hatch test --python "${{ matrix.python-version }}"
+        run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
 
       - name: Test individual
         if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false'
@@ -111,6 +112,6 @@ jobs:
               exit 1
             fi
 
-            hatch test --python "${{ matrix.python-version }}" "${module}"
+            uv run --python "${{ matrix.python-version }}" "test/test_results.py" "${module}"
           done
           exit 0
