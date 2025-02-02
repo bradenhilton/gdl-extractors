@@ -72,7 +72,7 @@ __tests__ = (
     },
     {
         "#url": "https://weverse.io/dreamcatcher/feed",
-        "#comment": "feed tab (fan posts)" "each pagination call returns up to 20 items",
+        "#comment": ("feed tab (fan posts)", "each pagination call returns up to 20 items"),
         "#category": ("", "weverse", "feed"),
         "#class": weverse.WeverseFeedExtractor,
         "#pattern": weverse.WeversePostExtractor.pattern,
@@ -81,7 +81,7 @@ __tests__ = (
     },
     {
         "#url": "https://weverse.io/dreamcatcher/artist",
-        "#comment": "artist tab (artist posts)" "each pagination call returns up to 20 items",
+        "#comment": ("artist tab (artist posts)", "each pagination call returns up to 20 items"),
         "#category": ("", "weverse", "feed"),
         "#class": weverse.WeverseFeedExtractor,
         "#pattern": weverse.WeversePostExtractor.pattern,
