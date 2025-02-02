@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "gdl-extractors"
 version = "0.0.1"
 description = "Custom extractors for gallery-dl"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { file = "LICENSE" }
 readme = "README.md"
 keywords = ["gallery-dl", "extractor"]
@@ -14,20 +14,11 @@ authors = [{ name = "bradenhilton" }]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = ["gallery-dl<2"]
 
+[dependency-groups]
+dev = ["ruff>=0.0.17"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["extractor"]
-
-[tool.hatch.envs.hatch-test]
-default-args = []
-
-[tool.hatch.envs.hatch-test.scripts]
-run = "hatch run python ./test/test_results.py {args}"
-run-cov = "hatch run python ./test/test_results.py {args}"
-cov-combine = ""
-cov-report = ""
-
-[tool.hatch.envs.hatch-static-analysis]
-config-path = "ruff.toml"
 
 [tool.ruff]
 extend = "ruff.toml"
