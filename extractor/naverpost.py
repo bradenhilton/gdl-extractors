@@ -57,9 +57,9 @@ class NaverpostPostExtractor(NaverpostExtractor):
     """Extractor for posts on post.naver.com"""
 
     subcategory = "post"
-    filename_fmt = "{volume_no}_{filename}.{extension}"
+    filename_fmt = "{volume_no}_{num}.{extension}"
     directory_fmt = ("{category}", "{author}", "{volume_no}")
-    archive_fmt = "{volume_no}_{filename}_{num}"
+    archive_fmt = "{volume_no}_{num}"
     pattern = BASE_PATTERN + r"/viewer/postView\.(naver|nhn)\?volumeNo=(\d+)(?:&.+)?"
     example = "https://post.naver.com/viewer/postView.naver?volumeNo=12345"
 
