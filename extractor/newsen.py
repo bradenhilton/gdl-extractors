@@ -19,7 +19,7 @@ class NewsenExtractor(Extractor):
         if params is None:
             params = {}
         while True:
-            response = self.request(url, params=params, verify=False)
+            response = self.request(url, params=params)
             response.encoding = response.apparent_encoding
             if response.status_code < HTTPStatus.MULTIPLE_CHOICES:
                 return response.text
