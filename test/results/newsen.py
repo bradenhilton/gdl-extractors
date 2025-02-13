@@ -6,7 +6,32 @@ FILE_EXTENSIONS = r"\.(?:gif|jpe?g|png|webp)$"
 
 __tests__ = (
     {
+        "#url": "https://m.newsen.com/news_view.php?uid=202411010854493510",
+        "#comment": "m subdomain",
+        "#category": ("", "newsen", "article"),
+        "#class": newsen.NewsenArticleExtractor,
+        "#pattern": rf"{BASE_URL_PATTERN}\d+/\d+/\d+/\d+_\d{FILE_EXTENSIONS}",
+        "#count": 1,
+        "date": "dt:2024-10-31 23:54:56",
+        "title": "드림캐쳐 수아 ‘러블리 핑크 공주’[포토엔HD]",
+        "post_id": "202411010854493510",
+        "post_url": "https://newsen.com/news_view.php?uid=202411010854493510",
+    },
+    {
+        "#url": "https://www.newsen.com/news_view.php?uid=202411010854493510",
+        "#comment": "www subdomain",
+        "#category": ("", "newsen", "article"),
+        "#class": newsen.NewsenArticleExtractor,
+        "#pattern": rf"{BASE_URL_PATTERN}\d+/\d+/\d+/\d+_\d{FILE_EXTENSIONS}",
+        "#count": 1,
+        "date": "dt:2024-10-31 23:54:56",
+        "title": "드림캐쳐 수아 ‘러블리 핑크 공주’[포토엔HD]",
+        "post_id": "202411010854493510",
+        "post_url": "https://newsen.com/news_view.php?uid=202411010854493510",
+    },
+    {
         "#url": "https://newsen.com/news_view.php?uid=202411010854493510",
+        "#comment": "no subdomain",
         "#category": ("", "newsen", "article"),
         "#class": newsen.NewsenArticleExtractor,
         "#pattern": rf"{BASE_URL_PATTERN}\d+/\d+/\d+/\d+_\d{FILE_EXTENSIONS}",

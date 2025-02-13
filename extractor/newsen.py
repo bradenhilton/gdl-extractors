@@ -6,7 +6,7 @@ from http import HTTPStatus
 from gallery_dl import exception, text
 from gallery_dl.extractor.common import Extractor, Message
 
-BASE_PATTERN = r"(?:https?://)?(?:m\.)?newsen\.com"
+BASE_PATTERN = r"(?:https?://)?(?:(?:www|m)\.)?newsen\.com"
 
 
 class NewsenExtractor(Extractor):
@@ -52,7 +52,8 @@ class NewsenArticleExtractor(NewsenExtractor):
     def metadata(self, page):
         return {
             "title": text.extr(page, "<title>", "</title>")
-            .replace(" - 손에 잡히는 뉴스 눈에 보이는 뉴스 - 뉴스엔", "")
+            .replace("- 손에 잡히는 뉴스 눈에 보이는 뉴스", "")
+            .replace("- 뉴스엔", "")
             .strip(),
             "date": (
                 text.parse_datetime(
@@ -77,9 +78,14 @@ class NewsenArticleExtractor(NewsenExtractor):
 
         yield Message.Directory, data
 
-        article_body = text.extr(page, '<td class="article">', "</td>")
+        is_mobile = re.search(r"^(https://)?m\.newsen\.com", self.url)
+        if is_mobile:
+            article_body = text.extr(page, 'itemprop="articleBody"', "<!-- 기사본문 -->")
+            image = text.extr(article_body, "<img class='fx'", ">")
+        else:
+            article_body = text.extr(page, '<td class="article">', "</td>")
+            image = text.extr(article_body, "<img id='artImg'", ">")
 
-        image = text.extr(article_body, "<img id='artImg'", ">")
         data["num"] = 1
         url = text.ensure_http_scheme(text.extr(image, ' src="', '"'))
         data["image_url"] = url
