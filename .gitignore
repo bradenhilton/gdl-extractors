@@ -9,3 +9,5 @@ env
 .env
 venv
 .venv
+
+uv.lock
