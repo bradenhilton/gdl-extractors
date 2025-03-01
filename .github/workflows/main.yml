@@ -5,10 +5,14 @@ on:
     branches: [main, master]
   push:
     branches: [main, master]
+  schedule:
+    - cron: "0 0 * * 1"
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
   PIP_TRUSTED_HOST: "pypi.python.org pypi.org files.pythonhosted.org"
+
+permissions: {}
 
 jobs:
   changes:
@@ -24,6 +28,8 @@ jobs:
       modules_exist: ${{ steps.modules_exist.outputs.modules_exist }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
 
       - name: Modules exist
         id: modules_exist
@@ -61,8 +67,10 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
 
-      - uses: astral-sh/ruff-action@f14634c415d3e63ffd4d550a22f037df4c734a60
+      - uses: astral-sh/ruff-action@39f75e526a505e26a302f8796977b50c13720edf
         with:
           version-file: pyproject.toml
 
@@ -79,14 +87,21 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355
+      - uses: astral-sh/setup-uv@1edb52594c857e2b5b13128931090f0640537287
+        with:
+          enable-cache: true
+          cache-suffix: ${{ matrix.python-version }}
+          cache-dependency-glob: "**/pyproject.toml"
 
       - name: Test all
         if: needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
@@ -94,9 +109,11 @@ jobs:
 
       - name: Test individual
         if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false'
+        env:
+          EXTRACTORS_FILES: ${{ needs.changes.outputs.extractors_files }}
         run: |
           # Get unique extractor module names from the array of added/modified file paths
-          modules=($( jq -r 'map(match("/([^/]+)\\.py$").captures[0].string) | unique | join(" ")' <<< '${{ needs.changes.outputs.extractors_files }}' ))
+          modules=($( jq -r 'map(match("/([^/]+)\\.py$").captures[0].string) | unique | join(" ")' <<< '${EXTRACTORS_FILES}' ))
 
           for module in "${modules[@]}"; do
             src_file="./extractor/${module}.py"
@@ -115,3 +132,32 @@ jobs:
             uv run --python "${{ matrix.python-version }}" "test/test_results.py" "${module}"
           done
           exit 0
+
+  scheduled-test:
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'schedule'
+    permissions:
+      contents: read
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: astral-sh/setup-uv@1edb52594c857e2b5b13128931090f0640537287
+        with:
+          enable-cache: true
+          cache-suffix: ${{ matrix.python-version }}
+          cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Test all
+        run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
