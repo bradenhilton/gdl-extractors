@@ -21,6 +21,7 @@ concurrency:
 jobs:
   changes:
     runs-on: ubuntu-22.04
+    if: github.event_name != 'schedule'
     permissions:
       contents: read
       pull-requests: read
@@ -112,12 +113,12 @@ jobs:
         run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
 
       - name: Test individual
-        if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false'
+        if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false' && needs.changes.outputs.workflow == 'false'
         env:
           EXTRACTORS_FILES: ${{ needs.changes.outputs.extractors_files }}
         run: |
           # Get unique extractor module names from the array of added/modified file paths
-          modules=($( jq -r 'map(match("/([^/]+)\\.py$").captures[0].string) | unique | join(" ")' <<< '${EXTRACTORS_FILES}' ))
+          modules=($( jq -r 'map(match("/([^/]+)\\.py$").captures[0].string) | unique | join(" ")' <<< "${EXTRACTORS_FILES}" ))
 
           for module in "${modules[@]}"; do
             src_file="./extractor/${module}.py"
