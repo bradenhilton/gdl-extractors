@@ -50,10 +50,7 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
 
     def metadata(self, page):
         data = {
-            "title": text.extr(page, "<title>", "</title>")
-            .strip()
-            .replace(" [HD포토]", "")
-            .replace(" - 최규석 기자 - 톱스타뉴스", ""),
+            "title": text.extr(page, '<H1 class="heading">', "</H1>").replace("[HD포토]", "").strip(),
             "date": (
                 text.parse_datetime(
                     text.rextract(
@@ -63,7 +60,7 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
                     )[0],
                 )
             ),
-            "author": text.extr(page, ' name="author" content="', '"').strip().replace(" 기자", ""),
+            "author": text.extr(page, ' name="author" content="', '"').replace("기자", "").strip(),
             "post_id": self.post_id,
             "post_url": self.post_url,
         }
