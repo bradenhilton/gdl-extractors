@@ -77,8 +77,7 @@ class IsplusArticleExtractor(IsplusExtractor):
 
         for data["num"], image in enumerate(images, start=1):
             src = text.extr(image, ' src="', '"')
-            src = re.sub(r"(\/data\/+isp\/+image\/+.*)\.[0-9]+x\.[0-9]+(\.[^/.]+)(?:[?#].*)?$", r"\1\2", src)
-            url = f"{self.root}{src}"
+            url = re.sub(r"(\/data\/+isp\/+image\/+.*)\.[0-9]+x\.[0-9]+(\.[^/.]+)(?:[?#].*)?$", r"\1\2", src)
             data["image_url"] = url
             text.nameext_from_url(text.unquote(url), data)
             yield Message.Url, url, data

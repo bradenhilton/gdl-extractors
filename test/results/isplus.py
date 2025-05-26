@@ -1,6 +1,6 @@
 from extractor import isplus
 
-BASE_URL_PATTERN = r"^https://isplus\.com/data/isp/image/"
+BASE_URL_PATTERN = r"^https://image\.isplus\.com/data/isp/image/"
 FILE_EXTENSIONS = r"\.(?:gif|jpe?g|png|webp)$"
 URL_PATTERN = rf"{BASE_URL_PATTERN}\d{{4,}}/\d{{2}}/\d{{2}}/isp[A-Za-z0-9-]+{FILE_EXTENSIONS}"
 
