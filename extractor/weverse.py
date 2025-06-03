@@ -25,21 +25,20 @@ class WeverseExtractor(Extractor):
     filename_fmt = "{category}_{id}.{extension}"
     archive_fmt = "{category}_{post_id}_{id}"
     cookies_domain = ".weverse.io"
-    cookies_names = ("we2_access_token",)
+    cookies_names = ("we2_access_token", "we2_refresh_token")
     root = "https://weverse.io"
 
     def __init__(self, match):
         Extractor.__init__(self, match)
-        self.post_url = match.group(0)
         self.community_keyword = match.group(1)
 
     def _init(self):
         self.embeds = self.config("embeds", default=True)
         self.videos = self.config("videos", default=True)
+        self.api = WeverseAPI(self)
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         post = self.post()
         data = self.metadata(post)
@@ -93,7 +92,7 @@ class WeverseExtractor(Extractor):
         return {
             "id": embed["youtubeVideoId"],
             "extension": None,
-            "url": "ytdl:" + embed["videoPath"],
+            "url": f"ytdl:{embed['videoPath']}",
         }
 
     def _extract_post(self, post):
@@ -161,7 +160,7 @@ class WeverseExtractor(Extractor):
         published_at = text.parse_timestamp(post["publishedAt"] / 1000)
         data = {
             "date": published_at,
-            "post_url": post.get("shareUrl", self.post_url),
+            "post_url": post.get("shareUrl", self.url),
             "post_id": post["postId"],
             "post_type": post["postType"],
             "section_type": post["sectionType"],
@@ -227,13 +226,64 @@ class WeverseExtractor(Extractor):
     def post(self):
         return {}
 
+    def _is_access_token_valid(self, access_token=None):
+        validate_res = self.api.validate_access_token(access_token)
+        return all(
+            [
+                int(validate_res.get("expiresIn", 0)) >= 3600,  # noqa: PLR2004
+                not validate_res.get("refreshRequired", True),
+            ]
+        )
+
+    def _refresh_access_token(self, source, access_token=None, refresh_token=None):
+        if access_token:
+            self.log.info("Validating access token (%s)", source)
+            if self._is_access_token_valid(access_token):
+                return {self.cookies_names[0]: access_token}
+            if refresh_token:
+                self.log.info("Refreshing access token (%s)", source)
+                res = self.api.refresh_access_token(access_token, refresh_token)
+                if "accessToken" in res and "refreshToken" in res:
+                    return {self.cookies_names[0]: res["accessToken"], self.cookies_names[1]: res["refreshToken"]}
+        return {}
+
     def login(self):
         if self.cookies_check(self.cookies_names):
             return
 
         username, password = self._get_auth_info()
-        if username:
-            self.cookies_update(_login_impl(self, username, password))
+        if any([username, password]):
+            self.log.warning("""\
+It is no longer possible to log in with a username and password due to reCAPTCHA.
+Please use cookies or set 'access_token' to the 'we2_access_token' cookie value and/or
+'refresh_token' to the 'we2_refresh_token' cookie value under 'extractor.weverse' in your config.""")
+
+        self.cookies_update(self._login_impl())
+
+    @cache(maxage=3 * 86400)
+    def _login_impl(self):
+        access_token_cookie = self.cookies.get(self.cookies_names[0], domain=self.cookies_domain)
+        refresh_token_cookie = self.cookies.get(self.cookies_names[1], domain=self.cookies_domain)
+        new_cookies = self._refresh_access_token(
+            source="cookie", access_token=access_token_cookie, refresh_token=refresh_token_cookie
+        )
+        if new_cookies != {}:
+            return new_cookies
+
+        access_token_config = self.config("access_token")
+        refresh_token_config = self.config("refresh_token")
+        new_cookies = self._refresh_access_token(
+            source="config", access_token=access_token_config, refresh_token=refresh_token_config
+        )
+        if new_cookies != {}:
+            return new_cookies
+
+        self.log.warning("""\
+Unable to refresh access token. Please login to the site again and/or re-export cookies
+or update 'access_token' and/or 'refresh_token' under 'extractor.weverse' in your config.
+Proceeding without authentication.
+""")
+        return {}
 
 
 class WeversePostExtractor(WeverseExtractor):
@@ -241,7 +291,7 @@ class WeversePostExtractor(WeverseExtractor):
 
     subcategory = "post"
     directory_fmt = ("{category}", "{community[name]}", "{author[id]}", "{post_id}")
-    pattern = BASE_PATTERN + r"/(?:artist|fanpost)" + POST_ID_PATTERN
+    pattern = rf"{BASE_PATTERN}/(?:artist|fanpost){POST_ID_PATTERN}"
     example = "https://weverse.io/abcdef/artist/1-123456789"
 
     def __init__(self, match):
@@ -256,7 +306,7 @@ class WeverseMemberExtractor(WeverseExtractor):
     """Extractor for all posts from a weverse community member"""
 
     subcategory = "member"
-    pattern = BASE_PATTERN + "/profile" + MEMBER_ID_PATTERN + r"$"
+    pattern = rf"{BASE_PATTERN}/profile{MEMBER_ID_PATTERN}$"
     example = "https://weverse.io/abcdef/profile/a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5"
 
     def __init__(self, match):
@@ -265,7 +315,6 @@ class WeverseMemberExtractor(WeverseExtractor):
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         data = {"_extractor": WeversePostExtractor}
         posts = self.api.get_member_posts(self.member_id)
@@ -277,7 +326,7 @@ class WeverseFeedExtractor(WeverseExtractor):
     """Extractor for a weverse community feed"""
 
     subcategory = "feed"
-    pattern = BASE_PATTERN + r"/(feed|artist)$"
+    pattern = rf"{BASE_PATTERN}/(feed|artist)$"
     example = "https://weverse.io/abcdef/feed"
 
     def __init__(self, match):
@@ -286,7 +335,6 @@ class WeverseFeedExtractor(WeverseExtractor):
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         data = {"_extractor": WeversePostExtractor}
         posts = self.api.get_feed_posts(self.community_keyword, self.feed_name)
@@ -298,7 +346,7 @@ class WeverseMomentExtractor(WeverseExtractor):
     """Extractor for a weverse community artist moment"""
 
     subcategory = "moment"
-    pattern = BASE_PATTERN + "/moment" + MEMBER_ID_PATTERN + "/post" + POST_ID_PATTERN
+    pattern = rf"{BASE_PATTERN}/moment{MEMBER_ID_PATTERN}/post{POST_ID_PATTERN}"
     example = "https://weverse.io/abcdef/moment/a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5/post/1-123456789"
 
     def __init__(self, match):
@@ -313,7 +361,7 @@ class WeverseMomentsExtractor(WeverseExtractor):
     """Extractor for all moments from a weverse community artist"""
 
     subcategory = "moments"
-    pattern = BASE_PATTERN + "/moment" + MEMBER_ID_PATTERN + r"$"
+    pattern = rf"{BASE_PATTERN}/moment{MEMBER_ID_PATTERN}$"
     example = "https://weverse.io/abcdef/moment/a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5"
 
     def __init__(self, match):
@@ -322,7 +370,6 @@ class WeverseMomentsExtractor(WeverseExtractor):
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         data = {"_extractor": WeverseMomentExtractor}
         moments = self.api.get_member_moments(self.member_id)
@@ -335,7 +382,7 @@ class WeverseMediaExtractor(WeverseExtractor):
 
     subcategory = "media"
     directory_fmt = ("{category}", "{community[name]}", "media", "{post_id}")
-    pattern = BASE_PATTERN + "/media" + POST_ID_PATTERN
+    pattern = rf"{BASE_PATTERN}/media{POST_ID_PATTERN}"
     example = "https://weverse.io/abcdef/media/1-123456789"
 
     def __init__(self, match):
@@ -350,7 +397,7 @@ class WeverseMediaTabExtractor(WeverseExtractor):
     """Extractor for the media tab of a weverse community"""
 
     subcategory = "media-tab"
-    pattern = BASE_PATTERN + r"/media(?:/(all|membership|new))?$"
+    pattern = rf"{BASE_PATTERN}/media(?:/(all|membership|new))?$"
     example = "https://weverse.io/abcdef/media"
 
     def __init__(self, match):
@@ -359,7 +406,6 @@ class WeverseMediaTabExtractor(WeverseExtractor):
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         data = {"_extractor": WeverseMediaExtractor}
         if self.tab_name == "new":
@@ -377,7 +423,7 @@ class WeverseMediaCategoryExtractor(WeverseExtractor):
     """Extractor for media by category of a weverse community"""
 
     subcategory = "media-category"
-    pattern = BASE_PATTERN + r"/media/category/(\d+)"
+    pattern = rf"{BASE_PATTERN}/media/category/(\d+)"
     example = "https://weverse.io/abcdef/media/category/1234"
 
     def __init__(self, match):
@@ -386,7 +432,6 @@ class WeverseMediaCategoryExtractor(WeverseExtractor):
 
     def items(self):
         self.login()
-        self.api = WeverseAPI(self)
 
         data = {"_extractor": WeverseMediaExtractor}
         medias = self.api.get_media_by_category_id(self.media_category)
@@ -398,26 +443,48 @@ class WeverseAPI:
     """Interface for the Weverse API"""
 
     BASE_API_URL = "https://global.apis.naver.com"
-    WMD_API_URL = BASE_API_URL + "/weverse/wevweb"
-    VOD_API_URL = BASE_API_URL + "/rmcnmv/rmcnmv"
+    WMD_API_URL = f"{BASE_API_URL}/weverse/wevweb"
+    VOD_API_URL = f"{BASE_API_URL}/rmcnmv/rmcnmv"
+
+    ACCOUNT_BASE_API_URL = "https://accountapi.weverse.io"
 
     APP_ID = "be4d79eb8fc7bd008ee82c8ec4ff6fd4"
     SECRET = "1b9cb6378d959b45714bec49971ade22e6e24e42"  # noqa: S105
 
     def __init__(self, extractor):
-        self.extractor = extractor
+        self.extr = extractor
+        self.device_id = extractor.cookies.get("we2_device_id", domain=extractor.cookies_domain) or str(uuid.uuid4())
+        root = extractor.root
+        self.base_headers = {
+            "Accept": "application/json",
+            "Origin": root,
+            "Referer": f"{root}/",
+        }
 
-        cookies = extractor.cookies
-        token_cookie_name = extractor.cookies_names[0]
-        cookies_domain = extractor.cookies_domain
-        self.access_token = cookies.get(token_cookie_name, domain=cookies_domain)
-        self.headers = {"Authorization": "Bearer " + self.access_token} if self.access_token else None
+    def _auth_header(self, access_token=None):
+        token_cookie = self.extr.cookies.get(self.extr.cookies_names[0], domain=self.extr.cookies_domain)
+        token = access_token or token_cookie
+        if token:
+            return {"Authorization": f"Bearer {token}"}
+        return {}
+
+    def _headers(self):
+        return {**self.base_headers, **self._auth_header(), "WEV-device-Id": self.device_id}
+
+    def _token_headers(self, access_token=None):
+        return {
+            **self.base_headers,
+            **self._auth_header(access_token),
+            "X-ACC-APP-SECRET": "5419526f1c624b38b10787e5c10b2a7a",
+            "X-ACC-SERVICE-ID": "weverse",
+            "X-ACC-TRACE-ID": str(uuid.uuid4()),
+        }
 
     def _endpoint_with_params(self, endpoint, params):
         params_delimiter = "?"
         if "?" in endpoint:
             params_delimiter = "&"
-        return endpoint + params_delimiter + urllib.parse.urlencode(query=params)
+        return f"{endpoint}{params_delimiter}{urllib.parse.urlencode(query=params)}"
 
     def _message_digest(self, endpoint, params, timestamp):
         key = self.SECRET.encode()
@@ -443,7 +510,8 @@ class WeverseAPI:
         return True
 
     def get_in_key(self, video_id):
-        endpoint = f"/video/v1.1/vod/{video_id}/inKey"
+        endpoint = f"/video/v1.2/vod/{video_id}/inKey"
+
         return self._call_wmd(endpoint, method="POST")["inKey"]
 
     def get_community_id(self, community_keyword):
@@ -454,9 +522,10 @@ class WeverseAPI:
     def get_post(self, post_id):
         endpoint = f"/post/v1.0/post-{post_id}"
         params = {"fieldSet": "postV1"}
-        if not self.access_token:
+        headers = self._headers()
+        if not headers.get("Authorization"):
             endpoint, params = self._apply_no_auth(endpoint, params)
-        return self._call_wmd(endpoint, params)
+        return self._call_wmd(endpoint, params, headers=headers)
 
     def get_media_video_list(self, video_id, master_id):
         in_key = self.get_in_key(video_id)
@@ -468,7 +537,7 @@ class WeverseAPI:
     def get_post_video_list(self, video_id):
         endpoint = f"/cvideo/v1.0/cvideo-{video_id}/playInfo"
         params = {"videoId": video_id}
-        res = self._call_wmd(endpoint, params=params)
+        res = self._call_wmd(endpoint, params)
         return res["playInfo"]["videos"]["list"]
 
     def get_member_posts(self, member_id):
@@ -535,22 +604,38 @@ class WeverseAPI:
         }
         return self._pagination(endpoint, params)
 
+    def validate_access_token(self, access_token=None):
+        headers = self._token_headers(access_token)
+        if headers.get("Authorization"):
+            url = f"{self.ACCOUNT_BASE_API_URL}/api/v1/token/validate"
+            return self._call(url, headers=headers)
+        return {}
+
+    def refresh_access_token(self, access_token=None, refresh_token=None):
+        headers = self._token_headers(access_token)
+        token = refresh_token or self.extr.cookies.get(self.extr.cookies_names[1], domain=self.extr.cookies_domain)
+        if headers.get("Authorization") and token:
+            url = f"{self.ACCOUNT_BASE_API_URL}/api/v1/token/refresh"
+            data = {"refreshToken": token}
+            return self._call(url, method="POST", headers=headers, json=data)
+        return {}
+
     def _call(self, url, **kwargs):
         try:
             while True:
-                return self.extractor.request(url, **kwargs).json()
+                return self.extr.request(url, **kwargs).json()
         except exception.HttpError as exc:
             if exc.response.status_code == HTTPStatus.UNAUTHORIZED:
                 raise exception.AuthenticationError from None
             if exc.response.status_code == HTTPStatus.FORBIDDEN:
-                msg = "Post requires membership"
+                msg = "Access token is invalid or Post requires membership"
                 raise exception.AuthorizationError(msg) from None
             if exc.response.status_code == HTTPStatus.NOT_FOUND:
-                raise exception.NotFoundError(self.extractor.subcategory) from None
-            self.extractor.log.debug(exc)
+                raise exception.NotFoundError(self.extr.subcategory) from None
+            self.extr.log.debug(exc)
             return None
 
-    def _call_wmd(self, endpoint, params=None, **kwargs):
+    def _call_wmd(self, endpoint, params=None, headers=None, **kwargs):
         if params is None:
             params = {}
         params.update(
@@ -573,19 +658,20 @@ class WeverseAPI:
             },
         )
         return self._call(
-            self.WMD_API_URL + endpoint,
+            f"{self.WMD_API_URL}{endpoint}",
             params=params,
-            headers=self.headers,
+            headers=headers or self._headers(),
             **kwargs,
         )
 
-    def _pagination(self, endpoint, params=None):
-        if not self.access_token:
+    def _pagination(self, endpoint, params=None, headers=None):
+        headers = headers or self._headers()
+        if not headers.get("Authorization"):
             raise exception.AuthenticationError
         if params is None:
             params = {}
         while True:
-            res = self._call_wmd(endpoint, params)
+            res = self._call_wmd(endpoint, params, headers=headers)
             for post in res["data"]:
                 if not self._is_text_only(post):
                     yield post
@@ -593,21 +679,3 @@ class WeverseAPI:
             if "after" not in np:
                 return
             params["after"] = np["after"]
-
-
-@cache(maxage=365 * 24 * 3600, keyarg=1)
-def _login_impl(extr, username, password):
-    url = "https://accountapi.weverse.io/web/api/v2/auth/token/by-credentials"
-    data = {"email": username, "password": password}
-    headers = {
-        "x-acc-app-secret": "5419526f1c624b38b10787e5c10b2a7a",
-        "x-acc-app-version": "3.0.0",
-        "x-acc-language": "en",
-        "x-acc-service-id": "weverse",
-        "x-acc-trace-id": str(uuid.uuid4()),
-    }
-    extr.log.info("Logging in as %s", username)
-    res = extr.request(url, method="POST", json=data, headers=headers).json()
-    if "accessToken" not in res:
-        extr.log.warning("Unable to log in as %s, proceeding without auth", username)
-    return {cookie.name: cookie.value for cookie in extr.cookies}
