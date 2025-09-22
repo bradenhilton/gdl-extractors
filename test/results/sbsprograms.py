@@ -15,7 +15,7 @@ __tests__ = (
         "views": int,
     },
     {
-        "#url": "https://programs.sbs.co.kr/sbsm/theshow/visualboard/58358?cmd=view&board_no=635",
+        "#url": "https://programs.sbs.co.kr/fune/theshow/visualboard/58358?cmd=view&board_no=635",
         "#category": ("", "sbsprograms", "article"),
         "#class": sbsprograms.SbsprogramsArticleExtractor,
         "#comment": "THE SHOW",
@@ -26,7 +26,7 @@ __tests__ = (
         "views": int,
     },
     {
-        "#url": "https://programs.sbs.co.kr/sbsm/theshow/visualboard/58358?cmd=view&page=1&board_no=312",
+        "#url": "https://programs.sbs.co.kr/fune/theshow/visualboard/58358?cmd=view&page=1&board_no=312",
         "#category": ("", "sbsprograms", "article"),
         "#class": sbsprograms.SbsprogramsArticleExtractor,
         "#comment": "image.board.sbs.co.kr URLs",

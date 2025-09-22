@@ -39,11 +39,7 @@ __tests__ = (
     },
     {
         "#url": "https://weverse.io/dreamcatcher/artist/3-138146100",
-        "#comment": (
-            "the order of the files returned by the api does not always match the order on the site"
-            "the id of the second file returned by the api is `2-274423384`"
-            "the id of the second file displayed on the site is `3-274413871`"
-        ),
+        "#comment": "media ordered differently in api response and on site",
         "#category": ("", "weverse", "post"),
         "#class": weverse.WeversePostExtractor,
         "#pattern": COMBINED_URL_PATTERN,
@@ -65,15 +61,8 @@ __tests__ = (
         },
     },
     {
-        "#url": "https://weverse.io/dreamcatcher/profile/e89820ec1a72d7255120284ca3aeafa5",
-        "#category": ("", "weverse", "member"),
-        "#class": weverse.WeverseMemberExtractor,
-        "#pattern": weverse.WeversePostExtractor.pattern,
-        "#auth": True,
-    },
-    {
         "#url": "https://weverse.io/dreamcatcher/feed",
-        "#comment": ("feed tab (fan posts)", "each pagination call returns up to 20 items"),
+        "#comment": "feed tab (fan posts), paginated, up to 20 per page",
         "#category": ("", "weverse", "feed"),
         "#class": weverse.WeverseFeedExtractor,
         "#pattern": weverse.WeversePostExtractor.pattern,
@@ -82,9 +71,17 @@ __tests__ = (
     },
     {
         "#url": "https://weverse.io/dreamcatcher/artist",
-        "#comment": ("artist tab (artist posts)", "each pagination call returns up to 20 items"),
+        "#comment": "artist tab (artist posts), paginated, up to 20 per page",
         "#category": ("", "weverse", "feed"),
         "#class": weverse.WeverseFeedExtractor,
+        "#pattern": weverse.WeversePostExtractor.pattern,
+        "#auth": True,
+        "#range": "21",
+    },
+    {
+        "#url": "https://weverse.io/dreamcatcher/profile/e89820ec1a72d7255120284ca3aeafa5",
+        "#category": ("", "weverse", "member"),
+        "#class": weverse.WeverseMemberExtractor,
         "#pattern": weverse.WeversePostExtractor.pattern,
         "#auth": True,
         "#range": "21",

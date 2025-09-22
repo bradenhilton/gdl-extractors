@@ -1,6 +1,6 @@
 from extractor import topstarnews
 
-BASE_URL_PATTERN = r"^https://cdn.topstarnews.net/news/photo/"
+BASE_URL_PATTERN = r"^https://cdn\.topstarnews\.net/news/photo/"
 FILE_EXTENSIONS = r"\.(?:gif|jpe?g|png|webp)$"
 
 
