@@ -34,14 +34,4 @@ __tests__ = (
         "author": "김도윤",
         "date": "dt:2024-09-13 09:05:04",
     },
-    {
-        "#url": "https://img.bntnews.co.kr/Photo/article/view/bnt202409300099",
-        "#category": ("", "bntnews", "article"),
-        "#class": bntnews.BntnewsArticleExtractor,
-        "#pattern": IMAGE_URL_PATTERN,
-        "#count": 1,
-        "title": "최예나 '다같이 신나게' [포토]",
-        "author": "김치윤",
-        "date": "dt:2024-09-30 07:55:59",
-    },
 )

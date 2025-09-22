@@ -1,6 +1,6 @@
 from extractor import news1
 
-IMAGE_URL_PATTERN = r"(?i)https://(?:image|i\d+n)\.news1\.kr/system/photos/\d+/\d+/\d+/\d+/original.jpg"
+IMAGE_URL_PATTERN = r"(?i)https://(?:image|i\d+n)\.news1\.kr/system/photos/\d+/\d+/\d+/\d+/original\.jpg"
 
 
 __tests__ = (
