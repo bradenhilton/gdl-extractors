@@ -61,7 +61,7 @@ class BntnewsArticleExtractor(BntnewsExtractor):
         return {
             "title": text.unescape(json_data.get("headline")),
             "author": json_data.get("author", {}).get("name"),
-            "date": text.parse_datetime(
+            "date": self.parse_datetime(
                 json_data.get("datePublished"),
                 format="%Y-%m-%d %H:%M:%S%z",
             ),
@@ -75,11 +75,11 @@ class BntnewsArticleExtractor(BntnewsExtractor):
 
         article_content = text.extr(page, '<div class="content">', '<div class="copyright">')
         urls = [
-            self._get_best_image_url(text.extr(image, 'src="', '"'))
+            self._get_best_image_url(text.ensure_http_scheme(text.extr(image, 'src="', '"')))
             for image in text.extract_iter(article_content, "<img", ">")
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

@@ -52,12 +52,13 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
         data = {
             "title": text.extr(page, '<H1 class="heading">', "</H1>").replace("[HD포토]", "").strip(),
             "date": (
-                text.parse_datetime(
+                self.parse_datetime(
                     text.rextract(
                         page,
                         ' property="article:published_time" content="',
                         '"',
                     )[0],
+                    format="%Y-%m-%dT%H:%M:%S%z",
                 )
             ),
             "author": text.extr(page, ' name="author" content="', '"').replace("기자", "").strip(),
@@ -74,7 +75,7 @@ class TopstarnewsArticleExtractor(TopstarnewsExtractor):
 
         data = self.metadata(page)
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         article_body = text.extr(page, 'itemprop="articleBody"', "</article>")
 

@@ -51,7 +51,7 @@ class OsenArticleExtractor(OsenExtractor):
         return {
             "title": text.unescape(text.extr(page, ' property="og:title" content="', '"')).replace("[사진]", ""),
             "description": text.unescape(text.extr(page, ' property="og:description" content="', '"')),
-            "date": text.parse_datetime(
+            "date": self.parse_datetime(
                 text.extr(page, ' property="article:published_time" content="', '"'),
                 format="%Y-%m-%dT%H:%M%z",
             ),
@@ -67,7 +67,7 @@ class OsenArticleExtractor(OsenExtractor):
 
         urls = [text.extr(image, 'src="', '"') for image in text.extract_iter(article_content, "<img ", ">")]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

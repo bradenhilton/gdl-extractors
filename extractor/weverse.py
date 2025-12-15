@@ -54,7 +54,7 @@ class WeverseExtractor(Extractor):
             # Text only
             return None
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
         for file in files:
             file.update(data)
             url = file.pop("url")
@@ -157,7 +157,7 @@ class WeverseExtractor(Extractor):
         )
 
     def metadata(self, post):
-        published_at = text.parse_timestamp(post["publishedAt"] / 1000)
+        published_at = self.parse_timestamp(post["publishedAt"] / 1000)
         data = {
             "date": published_at,
             "post_url": post.get("shareUrl", self.url),
@@ -218,7 +218,7 @@ class WeverseExtractor(Extractor):
             None,
         )
         if moment:
-            expire_at = text.parse_timestamp(moment["expireAt"] / 1000)
+            expire_at = self.parse_timestamp(moment["expireAt"] / 1000)
             data["expire_at"] = expire_at
 
         return data

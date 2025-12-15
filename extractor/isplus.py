@@ -51,12 +51,13 @@ class IsplusArticleExtractor(IsplusExtractor):
     def metadata(self, page):
         return {
             "date": (
-                text.parse_datetime(
+                self.parse_datetime(
                     text.extr(
                         page,
                         ' name="article:published_time" content="',
                         '"',
                     ),
+                    format="%Y-%m-%dT%H:%M:%S%z",
                 )
             ),
             "post_id": self.post_id,
@@ -69,7 +70,7 @@ class IsplusArticleExtractor(IsplusExtractor):
 
         data = self.metadata(page)
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         article_body = text.extr(page, ' id="article_body"', ' class="box banner"')
 
