@@ -1,6 +1,7 @@
 """Extractors for https://imbc.com"""
 
 import re
+from datetime import timedelta
 from http import HTTPStatus
 
 from gallery_dl import exception, text
@@ -54,11 +55,10 @@ class ImbcAdenewsArticleExtractor(ImbcExtractor):
         page = self._call(self.url)
         data = self.metadata(page)
         data["post_url"] = f"{self.root}/M/Detail/{self.article_id}"
-        data["date"] = text.parse_datetime(
+        data["date"] = self.parse_datetime(
             text.extr(text.extr(page, '<div class="date">', "</div>"), "<span>", "</span>"),
             format="%Y-%m-%d %H:%M",
-            utcoffset=9,
-        )
+        ) + timedelta(hours=-9)
 
         article_content = text.extr(page, "<!-- 기사 상세 Start -->", "<!-- 네이티브 End -->")
         urls = [
@@ -66,7 +66,7 @@ class ImbcAdenewsArticleExtractor(ImbcExtractor):
             for image in text.extract_iter(article_content, "<img", ">")
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}
@@ -92,11 +92,10 @@ class ImbcEnewsArticleExtractor(ImbcExtractor):
     def items(self):
         page = self._call(self.url)
         data = self.metadata(page)
-        data["date"] = text.parse_datetime(
+        data["date"] = self.parse_datetime(
             re.sub(r"Z$", "", text.extr(page, 'property="article:published_time" content="', '"')),
             format="%Y-%m-%dT%H:%M:%S",
-            utcoffset=9,
-        )
+        ) + timedelta(hours=-9)
 
         article_content = text.extr(page, "<!-- 기사 본문 내용 Start -->", "<!-- 기사 본문 내용 End -->")
         urls = [
@@ -104,7 +103,7 @@ class ImbcEnewsArticleExtractor(ImbcExtractor):
             for image in text.extract_iter(article_content, "<img", ">")
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}
@@ -124,7 +123,7 @@ class ImbcImnewsArticleExtractor(ImbcExtractor):
         "{article_id}",
     )
     archive_fmt = "{category}_{subcategory}_{article_id}_{filename}"
-    pattern = r"(?:https?://)?imnews\.imbc\.com/news/\d+/\w+/article/(\d+_\d+).html"
+    pattern = r"(?:https?://)?imnews\.imbc\.com/news/\d+/\w+/article/(\d+_\d+)\.html"
     example = "https://imnews.imbc.com/news/2024/enter/article/12345_67890.html"
 
     def __init__(self, match):
@@ -134,7 +133,7 @@ class ImbcImnewsArticleExtractor(ImbcExtractor):
     def items(self):
         page = self._call(self.url)
         data = self.metadata(page)
-        data["date"] = text.parse_datetime(
+        data["date"] = self.parse_datetime(
             text.extr(page, 'property="article:published_time" content="', '"'), format="%Y-%m-%dT%H:%M:%S%z"
         )
 
@@ -148,7 +147,7 @@ class ImbcImnewsArticleExtractor(ImbcExtractor):
             for image in text.extract_iter(article_content, "<img", ">")
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

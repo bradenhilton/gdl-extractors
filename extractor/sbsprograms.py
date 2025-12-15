@@ -2,6 +2,7 @@
 
 import json
 import re
+from datetime import timedelta
 from http import HTTPStatus
 from urllib.parse import urlparse
 
@@ -67,7 +68,7 @@ class SbsprogramsArticleExtractor(SbsprogramsExtractor):
     directory_fmt = ("{category}", "{program_id}")
     archive_fmt = "{program_id}_{board_number}_{filename}_{num}"
     pattern = BASE_PATTERN + r"/[^/]+/([^/]+)/(?:[^/]+/)*(\d+)/?\?.*board_no=(\d+).*"
-    example = "https://programs.sbs.co.kr/sbsm/theshow/visualboard/12345?cmd=view&board_no=836"
+    example = "https://programs.sbs.co.kr/fune/theshow/visualboard/12345?cmd=view&board_no=836"
 
     def __init__(self, match):
         SbsprogramsExtractor.__init__(self, match)
@@ -79,7 +80,7 @@ class SbsprogramsArticleExtractor(SbsprogramsExtractor):
     def metadata(self, article):
         return {
             "title": article.get("TITLE"),
-            "date": text.parse_datetime(article.get("REG_DATE"), format="%Y-%m-%d %H:%M:%S", utcoffset=9),
+            "date": self.parse_datetime(article.get("REG_DATE"), format="%Y-%m-%d %H:%M:%S") + timedelta(hours=-9),
             "views": text.parse_int(article.get("CLICK_CNT")),
             "program_id": self.program_id,
             "board_number": self.board_number,
@@ -99,7 +100,7 @@ class SbsprogramsArticleExtractor(SbsprogramsExtractor):
             for image in list(text.extract_iter(article_content, "<img", ">"))
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

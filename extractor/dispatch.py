@@ -51,7 +51,7 @@ class DispatchArticleExtractor(DispatchExtractor):
         return {
             "title": text.unescape(text.extr(page, ' property="og:title" content="', '"')),
             "description": text.unescape(text.extr(page, ' property="og:description" content="', '"')),
-            "date": text.parse_datetime(
+            "date": self.parse_datetime(
                 text.extr(page, ' property="article:published_time" content="', '"'),
                 format="%Y-%m-%dT%H:%M:%SZ",
             ),
@@ -71,7 +71,7 @@ class DispatchArticleExtractor(DispatchExtractor):
             if 'class="post-image"' in image
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

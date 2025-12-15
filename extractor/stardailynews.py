@@ -55,12 +55,13 @@ class StardailynewsArticleExtractor(StardailynewsExtractor):
             .replace(" < 포토 < 포토 · 동영상 < 기사본문 - 스타데일리뉴스", "")
             .replace(" ::", ""),
             "date": (
-                text.parse_datetime(
+                self.parse_datetime(
                     text.extr(
                         page,
                         ' property="article:published_time" content="',
                         '"',
                     ),
+                    format="%Y-%m-%dT%H:%M:%S%z",
                 )
             ),
             "post_id": self.post_id,
@@ -73,7 +74,7 @@ class StardailynewsArticleExtractor(StardailynewsExtractor):
 
         data = self.metadata(page)
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         article_body = text.extr(page, 'itemprop="articleBody"', "</article>")
 

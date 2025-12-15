@@ -75,7 +75,7 @@ class News1ArticleExtractor(News1Extractor):
             json_data = json_data[0]
         data = {
             "title": text.unescape(json_data.get("headLine")),
-            "date": text.parse_datetime(
+            "date": self.parse_datetime(
                 json_data.get("datePublished"),
                 format="%Y-%m-%dT%H:%M:%S%z",
             ),
@@ -98,7 +98,7 @@ class News1ArticleExtractor(News1Extractor):
             for image in text.extract_iter(figure, "<img", ">")
         ]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}

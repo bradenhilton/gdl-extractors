@@ -293,10 +293,13 @@ class TestExtractorResults(unittest.TestCase):
         elif isinstance(test, range):
             self.assertRange(value, test, msg=path)
         elif isinstance(test, set):
-            try:
-                self.assertIn(value, test, msg=path)
-            except AssertionError:
-                self.assertIn(type(value), test, msg=path)
+            for item in test:
+                if isinstance(item, type) and isinstance(value, item) or \
+                        value == item:
+                    break
+            else:
+                v = type(value) if len(str(value)) > 64 else value
+                self.fail(f"{v!r} not in {test}: {path}")
         elif isinstance(test, list):
             subtest = False
             for idx, item in enumerate(test):
@@ -332,6 +335,17 @@ class TestExtractorResults(unittest.TestCase):
                     for _ in value:
                         len_value += 1
                 self.assertEqual(int(length), len_value, msg=path)
+            elif test.startswith("hash:"):
+                digest = test[5:].lower()
+                msg = f"{path} / {digest}"
+                if digest == "md5":
+                    self.assertRegex(value, r"^[0-9a-fA-F]{32}$", msg)
+                elif digest == "sha1":
+                    self.assertRegex(value, r"^[0-9a-fA-F]{40}$", msg)
+                elif digest == "sha256":
+                    self.assertRegex(value, r"^[0-9a-fA-F]{64}$", msg)
+                elif digest == "sha512":
+                    self.assertRegex(value, r"^[0-9a-fA-F]{128}$", msg)
             elif test.startswith("iso:"):
                 iso = test[4:]
                 if iso in ("dt", "datetime", "8601"):
@@ -395,8 +409,7 @@ class ResultJob(job.DownloadJob):
 
     def run(self):
         self._init()
-        for msg in self.extractor:
-            self.dispatch(msg)
+        self.dispatch(self.extractor)
 
     def handle_url(self, url, kwdict, fallback=None):
         self._update_url(url)
@@ -599,4 +612,4 @@ def generate_tests():
 generate_tests()
 if __name__ == "__main__":
     load_test_config()
-    unittest.main(warnings="ignore", verbosity=2)
+    unittest.main(warnings="ignore")

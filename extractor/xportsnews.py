@@ -53,7 +53,7 @@ class XportsnewsArticleExtractor(XportsnewsExtractor):
         return {
             "title": text.unescape(json_data.get("headline")),
             "author": json_data.get("author", {}).get("name"),
-            "date": text.parse_datetime(
+            "date": self.parse_datetime(
                 json_data.get("datePublished"),
                 format="%Y-%m-%dT%H:%M:%S%z",
             ),
@@ -68,7 +68,7 @@ class XportsnewsArticleExtractor(XportsnewsExtractor):
         article_content = text.extr(page, '<div class="news_contents">', '<ul class="another_ats">')
         urls = [text.extr(image, "src='", "'") for image in text.extract_iter(article_content, "<img", ">")]
 
-        yield Message.Directory, data
+        yield Message.Directory, "", data
 
         for data["num"], url in enumerate(urls, 1):
             image = {"url": url}
