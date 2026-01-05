@@ -24,13 +24,4 @@ __tests__ = (
         "title": "[움짤] 아이브 안유진, 숨 참고 럽럽~",
         "date": "dt:2024-09-22 17:11:00",
     },
-    {
-        "#url": "https://imnews.imbc.com/news/2024/enter/article/6639093_36473.html",
-        "#category": ("", "imbc", "imnews-article"),
-        "#class": imbc.ImbcImnewsArticleExtractor,
-        "#pattern": IMAGE_URL_PATTERN,
-        "#count": 40,
-        "title": "[움짤] 아이브 안유진, 숨 참고 럽럽~",
-        "date": "dt:2024-09-22 17:11:52",
-    },
 )
