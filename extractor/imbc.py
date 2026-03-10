@@ -37,44 +37,6 @@ class ImbcExtractor(Extractor):
         }
 
 
-class ImbcAdenewsArticleExtractor(ImbcExtractor):
-    """Extractors for articles on adenews.imbc.com"""
-
-    subcategory = "adenews-article"
-    root = "https://adenews.imbc.com"
-    directory_fmt = ("{category}", "{subcategory}", "{article_id}")
-    archive_fmt = "{category}_{subcategory}_{article_id}_{filename}"
-    pattern = r"(?:https?://)?adenews\.imbc\.com/M/Detail/(\d+)"
-    example = "https://adenews.imbc.com/M/Detail/12345"
-
-    def __init__(self, match):
-        ImbcExtractor.__init__(self, match)
-        self.article_id = match.group(1)
-
-    def items(self):
-        page = self._call(self.url)
-        data = self.metadata(page)
-        data["post_url"] = f"{self.root}/M/Detail/{self.article_id}"
-        data["date"] = self.parse_datetime(
-            text.extr(text.extr(page, '<div class="date">', "</div>"), "<span>", "</span>"),
-            format="%Y-%m-%d %H:%M",
-        ) + timedelta(hours=-9)
-
-        article_content = text.extr(page, "<!-- 기사 상세 Start -->", "<!-- 네이티브 End -->")
-        urls = [
-            text.ensure_http_scheme(text.extr(image, 'src="', '"'))
-            for image in text.extract_iter(article_content, "<img", ">")
-        ]
-
-        yield Message.Directory, "", data
-
-        for data["num"], url in enumerate(urls, 1):
-            image = {"url": url}
-            data["image"] = image
-            text.nameext_from_url(url, data)
-            yield Message.Url, url, data
-
-
 class ImbcEnewsArticleExtractor(ImbcExtractor):
     """Extractors for articles on enews.imbc.com"""
 
