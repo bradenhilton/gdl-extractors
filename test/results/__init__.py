@@ -1,6 +1,7 @@
 # Adapted from https://github.com/mikf/gallery-dl/blob/master/test/results/__init__.py
 
 import functools
+
 from pathlib import Path
 
 __directory__ = Path(__file__).parent

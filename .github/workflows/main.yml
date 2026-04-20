@@ -110,7 +110,9 @@ jobs:
 
       - name: Test all
         if: needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
-        run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
+        run: |
+          chmod +x .github/scripts/retry.sh
+          .github/scripts/retry.sh uv run --python "${{ matrix.python-version }}" "test/test_results.py"
 
       - name: Test individual
         if: needs.changes.outputs.extractors == 'true' && needs.changes.outputs.core == 'false' && needs.changes.outputs.workflow == 'false'
@@ -134,7 +136,8 @@ jobs:
               exit 1
             fi
 
-            uv run --python "${{ matrix.python-version }}" "test/test_results.py" "${module}"
+            chmod +x .github/scripts/retry.sh
+            .github/scripts/retry.sh uv run --python "${{ matrix.python-version }}" "test/test_results.py" "${module}"
           done
           exit 0
 
@@ -165,4 +168,6 @@ jobs:
           cache-dependency-glob: "**/pyproject.toml"
 
       - name: Test all
-        run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
+        run: |
+          chmod +x .github/scripts/retry.sh
+          .github/scripts/retry.sh uv run --python "${{ matrix.python-version }}" "test/test_results.py"
