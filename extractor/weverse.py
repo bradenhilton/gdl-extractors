@@ -3,6 +3,7 @@
 import binascii
 import hashlib
 import hmac
+import itertools
 import time
 import urllib.parse
 import uuid
@@ -10,7 +11,6 @@ from collections import OrderedDict
 from http import HTTPStatus
 
 from gallery_dl import exception, text
-from gallery_dl.cache import cache
 from gallery_dl.extractor.common import Extractor, Message
 
 BASE_PATTERN = r"^(?:https?://)?(?:m\.)?weverse\.io/([^/?#]+)"
@@ -48,6 +48,11 @@ class WeverseExtractor(Extractor):
         elif post.get("extension"):
             if isinstance(self, WeverseMomentExtractor):
                 files = self._extract_moment(post)
+                first = next(files, None)
+                if first is None:
+                    # Text only
+                    return None
+                files = itertools.chain([first], files)
             else:
                 files = self._extract_media(post["extension"])
         else:
@@ -71,6 +76,9 @@ class WeverseExtractor(Extractor):
         }
 
     def _extract_video(self, video):
+        if video.get("drmStatus") == "COMPLETE":
+            msg = "DRM-protected videos are not supported"
+            raise exception.AbortExtraction(msg) from None
         video_id = video["videoId"]
         if isinstance(self, WeverseMediaExtractor):
             master_id = video.get("uploadInfo", {}).get("videoId") or video["infraVideoId"]
@@ -121,15 +129,19 @@ class WeverseExtractor(Extractor):
         moment = extension.get("moment") or extension.get("momentW1")
         if not moment:
             yield None
+            return
 
         if "photo" in moment:
             file = self._extract_image(moment["photo"])
-        else:
+        elif "video" in moment:
             if not self.videos:
                 yield None
             file = self._extract_video(moment["video"])
-        file["num"] = 1
+        else:
+            yield None
+            return
 
+        file["num"] = 1
         yield file
 
     def _extract_media(self, extension):
@@ -258,9 +270,8 @@ It is no longer possible to log in with a username and password due to reCAPTCHA
 Please use cookies or set 'access_token' to the 'we2_access_token' cookie value and/or
 'refresh_token' to the 'we2_refresh_token' cookie value under 'extractor.weverse' in your config.""")
 
-        self.cookies_update(self._login_impl())
+        self.cookies_update(self.cache(self._login_impl, _exp=3 * 86400, _mem=False))
 
-    @cache(maxage=3 * 86400)
     def _login_impl(self):
         access_token_cookie = self.cookies.get(self.cookies_names[0], domain=self.cookies_domain)
         refresh_token_cookie = self.cookies.get(self.cookies_names[1], domain=self.cookies_domain)
@@ -667,7 +678,7 @@ class WeverseAPI:
     def _pagination(self, endpoint, params=None, headers=None):
         headers = headers or self._headers()
         if not headers.get("Authorization"):
-            raise exception.AuthenticationError
+            raise exception.AuthenticationError from None
         if params is None:
             params = {}
         while True:

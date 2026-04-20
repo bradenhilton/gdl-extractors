@@ -102,6 +102,13 @@ __tests__ = (
         "expire_at": "dt:2022-07-18 00:24:48",
     },
     {
+        "#url": "https://weverse.io/dreamcatcher/moment/785506b50e7890c3b81491f20728ee82/post/2-101263254",
+        "#comment": "text-only moment",
+        "#category": ("", "weverse", "moment"),
+        "#class": weverse.WeverseMomentExtractor,
+        "#count#": 1,
+    },
+    {
         "#url": "https://weverse.io/dreamcatcher/moment/e89820ec1a72d7255120284ca3aeafa5",
         "#comment": "each pagination call returns 1 item",
         "#category": ("", "weverse", "moments"),
