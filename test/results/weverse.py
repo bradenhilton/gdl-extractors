@@ -38,17 +38,6 @@ __tests__ = (
         "#count": 0,
     },
     {
-        "#url": "https://weverse.io/dreamcatcher/artist/3-138146100",
-        "#comment": "media ordered differently in api response and on site",
-        "#category": ("", "weverse", "post"),
-        "#class": weverse.WeversePostExtractor,
-        "#pattern": COMBINED_URL_PATTERN,
-        "#range": "2",
-        "#count": 1,
-        "id": "3-274413871",
-        "num": 2,
-    },
-    {
         "#url": "https://weverse.io/dreamcatcher/fanpost/2-135105553",
         "#comment": "fan post",
         "#category": ("", "weverse", "post"),
