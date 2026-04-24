@@ -10,7 +10,8 @@ from collections import OrderedDict
 from http import HTTPStatus
 
 from gallery_dl import exception, text
-from gallery_dl.cache import cache
+
+# from gallery_dl.cache import cache # FIXME: Remove
 from gallery_dl.extractor.common import Extractor, Message
 
 BASE_PATTERN = r"^(?:https?://)?(?:m\.)?weverse\.io/([^/?#]+)"
@@ -260,7 +261,7 @@ Please use cookies or set 'access_token' to the 'we2_access_token' cookie value 
 
         self.cookies_update(self._login_impl())
 
-    @cache(maxage=3 * 86400)
+    # @cache(maxage=3 * 86400) # FIXME: Remove
     def _login_impl(self):
         access_token_cookie = self.cookies.get(self.cookies_names[0], domain=self.cookies_domain)
         refresh_token_cookie = self.cookies.get(self.cookies_names[1], domain=self.cookies_domain)
