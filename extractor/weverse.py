@@ -10,7 +10,6 @@ from collections import OrderedDict
 from http import HTTPStatus
 
 from gallery_dl import exception, text
-from gallery_dl.cache import cache
 from gallery_dl.extractor.common import Extractor, Message
 
 BASE_PATTERN = r"^(?:https?://)?(?:m\.)?weverse\.io/([^/?#]+)"
@@ -258,9 +257,8 @@ It is no longer possible to log in with a username and password due to reCAPTCHA
 Please use cookies or set 'access_token' to the 'we2_access_token' cookie value and/or
 'refresh_token' to the 'we2_refresh_token' cookie value under 'extractor.weverse' in your config.""")
 
-        self.cookies_update(self._login_impl())
+        self.cookies_update(self.cache(self._login_impl, _key=None, _exp=3 * 86400, _mem=False))
 
-    @cache(maxage=3 * 86400)
     def _login_impl(self):
         access_token_cookie = self.cookies.get(self.cookies_names[0], domain=self.cookies_domain)
         refresh_token_cookie = self.cookies.get(self.cookies_names[1], domain=self.cookies_domain)
