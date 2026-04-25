@@ -14,7 +14,7 @@ BASE_PATTERN = r"(?:https?://)?www\.news1\.kr"
 class News1Extractor(Extractor):
     """Base class for news1 article extractors"""
 
-    category = "bntnews"
+    category = "news1"
     root = "https://www.news1.kr"
 
     def _get_best_image_url(self, url):
