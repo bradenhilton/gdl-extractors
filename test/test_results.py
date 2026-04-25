@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import unittest
+
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).absolute().parent.parent))
@@ -108,11 +109,15 @@ class TestExtractorResults(unittest.TestCase):
         result.pop("#category", None)
         auth = result.pop("#auth", None)
 
-        extr_url = extractor.find(result["#url"])
-        self.assertTrue(extr_url, "extractor by URL/find")
-        extr_cls = extr = result["#class"].from_url(result["#url"])
-        self.assertTrue(extr_url, "extractor by cls.from_url()")
-        self.assertIs(extr_url.__class__, extr_cls.__class__)
+        cls = result["#class"]
+        if cls.__module__.startswith("gallery_dl.extractor."):
+            extr_url = extractor.find(result["#url"])
+        else:
+            extr_url = extractor_find_external(result)
+        self.assertIs(extr_url.__class__, cls, "extractor by URL/find")
+        extr_cls = extr = cls.from_url(result["#url"])
+        self.assertIs(extr_cls.__class__, cls, "extractor by cls.from_url()")
+        self.assertIs(extr_cls.__class__, extr_url.__class__)
 
         if len(result) <= 2:
             return  # only matching
@@ -128,7 +133,7 @@ class TestExtractorResults(unittest.TestCase):
             for key in AUTH_KEYS:
                 config.set((), key, None)
 
-        if auth and not any(extr.config(key) for key in AUTH_KEYS):
+        if auth and not self._has_auth(extr, auth):
             self._skipped.append((result["#url"], "no auth"))
             self.skipTest("no auth")
 
@@ -137,17 +142,27 @@ class TestExtractorResults(unittest.TestCase):
                 key = key.split(".")
                 config.set(key[:-1], key[-1], value)
         if "#range" in result:
-            config.set((), "image-range"  , result["#range"])
-            config.set((), "chapter-range", result["#range"])
+            config.set((), "file-range" , result["#range"])
+            config.set((), "child-range", result["#range"])
 
         tjob = ResultJob(extr,
                          content=("#sha1_content" in result),
                          format=(result.get("#metadata") != "post"))
 
         if "#exception" in result:
-            with self.assertRaises(result["#exception"], msg="#exception"), \
+            exc = result["#exception"]
+            if isinstance(exc, str):
+                exc, _, msg = exc.partition(":")
+                exc = getattr(exception, exc, None)
+            elif isinstance(exc, tuple):
+                exc, msg = exc
+            else:
+                msg = ""
+            with self.assertRaises(exc, msg="#exception") as cm, \
                     self.assertLogs() as log_info:
                 tjob.run()
+            if msg:
+                self.assertEqual(str(cm.exception), msg, msg="#exception/msg")
             if "#log" in result:
                 self.assertLogEqual(result["#log"], log_info.output)
             return
@@ -184,7 +199,7 @@ class TestExtractorResults(unittest.TestCase):
                     extr = kwdict["_extractor"].from_url(url)
                     if extr is None and not result.get("#extractor", True):
                         continue
-                    self.assertIsInstance(extr, kwdict["_extractor"])
+                    self.assertIsInstance(extr, kwdict["_extractor"], msg=url)
                     self.assertEqual(extr.url, url)
         else:
             # test 'extension' entries
@@ -254,6 +269,19 @@ class TestExtractorResults(unittest.TestCase):
             for kwdict in kwdicts:
                 self._test_kwdict(kwdict, metadata)
 
+    def _has_auth(self, extr, auth):
+        if auth is True:
+            auth = AUTH_KEYS
+
+        if isinstance(auth, str):
+            return extr.config(auth)
+        if isinstance(auth, set):
+            return any(self._has_auth(extr, a) for a in auth)
+        if isinstance(auth, (tuple, list)):
+            return all(self._has_auth(extr, k) for k in auth)
+
+        self.fail(f"Invalid '#auth' value: {auth!r}")
+
     def _test_kwdict(self, kwdict, tests, parent=None):
         for key, test in tests.items():
 
@@ -293,6 +321,8 @@ class TestExtractorResults(unittest.TestCase):
         elif isinstance(test, range):
             self.assertRange(value, test, msg=path)
         elif isinstance(test, set):
+            if isinstance(value, list):
+                value = tuple(value)
             for item in test:
                 if isinstance(item, type) and isinstance(value, item) or \
                         value == item:
@@ -381,6 +411,7 @@ class ResultJob(job.DownloadJob):
         self.queue = False
         self.content = content
 
+        self.format = format
         self.url_list = []
         self.url_hash = hashlib.sha1()
         self.kwdict_list = []
@@ -395,18 +426,6 @@ class ResultJob(job.DownloadJob):
         else:
             self._update_content = lambda url, kwdict: None
 
-        if format:
-            self.format_directory = TestFormatter(
-                "".join(self.extractor.directory_fmt)).format_map
-            self.format_filename = TestFormatter(
-                self.extractor.filename_fmt).format_map
-            self.format_archive = TestFormatter(
-                self.extractor.archive_fmt).format_map
-        else:
-            self.format_directory = \
-                self.format_filename = \
-                self.format_archive = lambda kwdict: ""
-
     def run(self):
         self._init()
         self.dispatch(self.extractor)
@@ -419,6 +438,20 @@ class ResultJob(job.DownloadJob):
         self.format_filename(kwdict)
 
     def handle_directory(self, kwdict):
+        if self.format is not None:
+            if self.format:
+                self.format_directory = TestFormatter(
+                    "".join(self.extractor.directory_fmt)).format_map
+                self.format_filename = TestFormatter(
+                    self.extractor.filename_fmt).format_map
+                self.format_archive = TestFormatter(
+                    self.extractor.archive_fmt).format_map
+            else:
+                self.format_directory = \
+                    self.format_filename = \
+                    self.format_archive = lambda kwdict: ""
+            self.format = None
+
         self._update_kwdict(kwdict, False)
         self.format_directory(kwdict)
 
@@ -502,6 +535,9 @@ class TestFormatter(formatter.StringFormatter):
                     return fmt(obj[key])
                 except KeyError:
                     return ""
+        elif "<function identity at " in repr(fmt):
+            def wrap(obj):
+                return "".join(obj[key])
         else:
             def wrap(obj):
                 return fmt(obj[key])
@@ -514,6 +550,9 @@ class TestFormatter(formatter.StringFormatter):
                 for func in funcs:
                     obj = func(obj)
                 return fmt(obj)
+        elif "<function identity at " in repr(fmt):
+            def wrap(obj):
+                return "".join(obj[key])
         else:
             def wrap(obj):
                 obj = obj[key]
@@ -538,6 +577,19 @@ def load_test_config():
         pass
     except Exception as exc:
         sys.exit(f"Error when loading {path}: {exc.__class__.__name__}: {exc}")
+
+
+def extractor_find_external(result, imported=set()):
+    _module_iter_orig = extractor._module_iter
+    try:
+        file = sys.modules[result["#class"].__module__].__file__
+        if file not in imported:
+            path, filename = os.path.split(file)
+            extractor._module_iter = extractor._modules_path(path, (filename,))
+            imported.add(file)
+        return extractor.find(result["#url"])
+    finally:
+        extractor._module_iter = _module_iter_orig
 
 
 def result_categories(result):

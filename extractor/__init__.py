@@ -1,8 +1,10 @@
 # Adapted from https://github.com/mikf/gallery-dl/blob/master/gallery_dl/extractor/__init__.py
 
-import re
+import importlib
 import sys
 from pathlib import Path
+
+from gallery_dl.text import re_compile
 
 __dirname__ = Path(__file__).parent
 
@@ -15,25 +17,26 @@ modules = [
 def find(url):
     """Find a suitable extractor for the given URL"""
     for cls in _list_classes():
-        match = cls.pattern.match(url)
-        if match:
+        if match := cls.pattern.match(url):
             return cls(match)
     return None
 
 
 def add(cls):
     """Add 'cls' to the list of available extractors"""
-    cls.pattern = re.compile(cls.pattern)
+    if isinstance(cls.pattern, str):
+        cls.pattern = re_compile(cls.pattern)
     _cache.append(cls)
     return cls
 
 
 def add_module(module):
     """Add all extractors in 'module' to the list of available extractors"""
-    classes = _get_classes(module)
-    for cls in classes:
-        cls.pattern = re.compile(cls.pattern)
-    _cache.extend(classes)
+    if classes := _get_classes(module):
+        if isinstance(classes[0].pattern, str):
+            for cls in classes:
+                cls.pattern = re_compile(cls.pattern)
+        _cache.extend(classes)
     return classes
 
 
@@ -59,15 +62,11 @@ def _list_classes():
 def _modules_internal():
     globals_ = globals()
     for module_name in modules:
-        yield __import__(module_name, globals_, None, (), 1)
+        yield __import__(module_name, globals_, None, None, 1)
 
 
 def _modules_path(path, files):
-    sys.path.insert(0, path)
-    try:
-        return [__import__(name[:-3]) for name in files if name.endswith(".py")]
-    finally:
-        del sys.path[0]
+    return [importlib.import_module(f"{Path(path).name}.{name[:-3]}") for name in files if name.endswith(".py")]
 
 
 def _get_classes(module):
