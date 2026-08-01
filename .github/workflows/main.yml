@@ -32,7 +32,7 @@ jobs:
       workflow: ${{ steps.filter.outputs.workflow }}
       modules_exist: ${{ steps.modules_exist.outputs.modules_exist }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
@@ -49,7 +49,7 @@ jobs:
           echo "modules_exist=false" >> "${GITHUB_OUTPUT}"
           exit 0
 
-      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d
+      - uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706
         id: filter
         with:
           list-files: json
@@ -71,11 +71,11 @@ jobs:
       contents: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b
+      - uses: astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89
         with:
           version-file: pyproject.toml
 
@@ -94,7 +94,7 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
@@ -150,7 +150,7 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
