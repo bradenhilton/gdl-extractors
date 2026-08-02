@@ -1,6 +1,8 @@
 from extractor import sbsprograms
+from test._env import ci_sleep
 
 IMAGE_URL_PATTERN = r"(?i)(?:https?://)(?:(?:photocloud|image\.cloud|image\.board|board)\.)?sbs\.co\.kr/(?:[^/]+/)*.*\.(?:gif|jpe?g|png|webp)"
+SLEEP = ci_sleep("5.0-10.0", sbsprograms.SbsprogramsArticleExtractor)
 
 
 __tests__ = (
@@ -10,6 +12,9 @@ __tests__ = (
         "#class": sbsprograms.SbsprogramsArticleExtractor,
         "#pattern": IMAGE_URL_PATTERN,
         "#count": 14,
+        "#options": {
+            "sleep-request": SLEEP,
+        },
         "title": "[Comeback] LE SSERAFIM - Swan Song + EASY",
         "date": "dt:2024-02-26 08:00:24",
         "views": int,
@@ -21,6 +26,9 @@ __tests__ = (
         "#comment": "THE SHOW",
         "#pattern": IMAGE_URL_PATTERN,
         "#count": 15,
+        "#options": {
+            "sleep-request": SLEEP,
+        },
         "title": "모두를 미소 짓게 만드는 스마일 히어로 예나의 행복 파워 듬뿍 담긴 발랄한 무대 YENA(최예나)",
         "date": "dt:2022-01-26 05:16:37",
         "views": int,
@@ -32,6 +40,9 @@ __tests__ = (
         "#comment": "image.board.sbs.co.kr URLs",
         "#pattern": IMAGE_URL_PATTERN,
         "#count": 23,
+        "#options": {
+            "sleep-request": SLEEP,
+        },
         "title": "여기가 바로 스페인이고 더쇼가 누울 자리! 홀릴 것만 같은 마성의 탱고로 돌아온 카리스마 여신들 (여자)아이들",
         "date": "dt:2019-03-06 00:15:11",
         "views": int,
@@ -43,6 +54,9 @@ __tests__ = (
         "#comment": "Inkigayo",
         "#pattern": IMAGE_URL_PATTERN,
         "#count": 9,
+        "#options": {
+            "sleep-request": SLEEP,
+        },
         "title": "[미션포토] YENA(최예나) (2)",
         "date": "dt:2023-07-07 06:07:07",
         "views": int,
@@ -53,6 +67,9 @@ __tests__ = (
         "#class": sbsprograms.SbsprogramsArticleExtractor,
         "#pattern": IMAGE_URL_PATTERN,
         "#count": 8,
+        "#options": {
+            "sleep-request": SLEEP,
+        },
         "title": "[현장포토] 잔나비X미연&민니 ((G)I-DLE) Special Stage",
         "date": "dt:2024-07-26 08:12:22",
         "views": int,
