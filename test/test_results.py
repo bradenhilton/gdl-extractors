@@ -546,9 +546,11 @@ class TestFormatter(formatter.StringFormatter):
     def _apply(self, key, funcs, fmt):
         if key == "extension" or "_parse_optional." in repr(fmt):
             def wrap(obj):
-                obj = obj[key] if key in obj else ""
-                for func in funcs:
-                    obj = func(obj)
+                if obj := obj.get(key):
+                    for func in funcs:
+                        obj = func(obj)
+                else:
+                    obj = ""
                 return fmt(obj)
         elif "<function identity at " in repr(fmt):
             def wrap(obj):
