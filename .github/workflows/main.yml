@@ -90,6 +90,7 @@ jobs:
       pull-requests: read
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
     timeout-minutes: 60
@@ -107,6 +108,13 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}
           cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Random startup delay
+        shell: bash
+        run: |
+          delay=$(( RANDOM % 31 ))
+          echo "Startup delay: ${delay}s"
+          sleep "${delay}"
 
       - name: Test all
         if: needs.changes.outputs.core == 'true' || needs.changes.outputs.workflow == 'true'
@@ -146,6 +154,7 @@ jobs:
       pull-requests: read
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
     timeout-minutes: 60
@@ -163,6 +172,13 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}
           cache-dependency-glob: "**/pyproject.toml"
+
+      - name: Random startup delay
+        shell: bash
+        run: |
+          delay=$(( RANDOM % 31 ))
+          echo "Startup delay: ${delay}s"
+          sleep "${delay}"
 
       - name: Test all
         run: uv run --python "${{ matrix.python-version }}" "test/test_results.py"
