@@ -92,7 +92,8 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
+        python-version:
+          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "pypy3.9"]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -156,7 +157,8 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9"]
+        python-version:
+          ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "pypy3.9"]
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
