@@ -2,7 +2,7 @@ from extractor import sbsprograms
 from test._env import ci_sleep
 
 IMAGE_URL_PATTERN = r"(?i)(?:https?://)(?:(?:photocloud|image\.cloud|image\.board|board)\.)?sbs\.co\.kr/(?:[^/]+/)*.*\.(?:gif|jpe?g|png|webp)"
-SLEEP = ci_sleep("5.0-10.0", sbsprograms.SbsprogramsArticleExtractor)
+SLEEP = ci_sleep("1.0-5.0", sbsprograms.SbsprogramsArticleExtractor)
 
 
 __tests__ = (
