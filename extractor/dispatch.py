@@ -1,8 +1,6 @@
 """Extractors for https://www.dispatch.co.kr/"""
 
-from http import HTTPStatus
-
-from gallery_dl import exception, text
+from gallery_dl import text, util
 from gallery_dl.extractor.common import Extractor, Message
 
 BASE_PATTERN = r"(?:https?://)?www\.dispatch\.co\.kr"
@@ -13,23 +11,6 @@ class DispatchExtractor(Extractor):
 
     category = "dispatch"
     root = "https://www.dispatch.co.kr"
-
-    def _call(self, url, params=None):
-        if params is None:
-            params = {}
-        while True:
-            response = self.request(url, params=params, fatal=None, allow_redirects=False)
-            if response.status_code < HTTPStatus.MULTIPLE_CHOICES:
-                return response.text
-            if response.status_code == HTTPStatus.UNAUTHORIZED:
-                raise exception.AuthenticationError from None
-            if response.status_code == HTTPStatus.FORBIDDEN:
-                raise exception.AuthorizationError from None
-            if response.status_code == HTTPStatus.NOT_FOUND:
-                raise exception.NotFoundError(self.subcategory) from None
-            self.log.debug(response.text)
-            msg = "Request failed"
-            raise exception.StopExtraction(msg)
 
 
 class DispatchArticleExtractor(DispatchExtractor):
@@ -60,13 +41,15 @@ class DispatchArticleExtractor(DispatchExtractor):
         }
 
     def items(self):
-        page = self._call(self.post_url)
+        page = self.request(self.post_url).text
         data = self.metadata(page)
 
         article_content = text.extr(page, "<article", "</article>")
 
         urls = [
-            text.extr(image, 'data-src="', '"') or text.extr(image, 'src="', '"')
+            text.extr(image, 'data-src="', '"')
+            or text.extr(image, 'src="', '"')
+            or util.b64decode(text.extr(image, 'data-il="', '"'))
             for image in text.extract_iter(article_content, "<img ", ">")
             if 'class="post-image"' in image
         ]
