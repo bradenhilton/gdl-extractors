@@ -1,6 +1,5 @@
 """Extractors for https://www.xportsnews.com/"""
 
-import json
 from http import HTTPStatus
 
 from gallery_dl import exception, text
@@ -49,16 +48,17 @@ class XportsnewsArticleExtractor(XportsnewsExtractor):
         self.post_url = match.group(0)
 
     def metadata(self, page):
-        json_data = json.loads(text.extr(page, '<script type="application/ld+json">', "</script>"))
+        json_data = self._extract_jsonld(page)
+        article = next(entry for entry in json_data["@graph"] if entry.get("@type") == "NewsArticle")
         return {
-            "title": text.unescape(json_data.get("headline")),
-            "author": json_data.get("author", {}).get("name"),
+            "title": text.unescape(article.get("headline")),
+            "author": article.get("author", {}).get("name"),
             "date": self.parse_datetime(
-                json_data.get("datePublished"),
+                article.get("datePublished"),
                 format="%Y-%m-%dT%H:%M:%S%z",
             ),
             "article_id": self.article_id,
-            "post_url": json_data.get("mainEntityOfPage", {}).get("@id"),
+            "post_url": article.get("url"),
         }
 
     def items(self):
