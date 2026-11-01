@@ -50,10 +50,10 @@ class StardailynewsArticleExtractor(StardailynewsExtractor):
 
     def metadata(self, page):
         return {
-            "title": text.extr(page, "<title>", "</title>")
-            .strip()
-            .replace(" < 포토 < 포토 · 동영상 < 기사본문 - 스타데일리뉴스", "")
-            .replace(" ::", ""),
+            "title": text.extr(page, '<meta property="og:title" content="', '"')
+            .replace(" - 스타데일리뉴스", "")
+            .replace(" :: 스타데일리뉴스", "")
+            .strip(),
             "date": (
                 self.parse_datetime(
                     text.extr(
