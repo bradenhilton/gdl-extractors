@@ -1,6 +1,5 @@
 """Extractors for https://www.news1.kr"""
 
-import json
 import re
 import urllib
 from http import HTTPStatus
@@ -70,17 +69,17 @@ class News1ArticleExtractor(News1Extractor):
         self.post_url = match.group(0)
 
     def metadata(self, page):
-        json_data = json.loads(text.extr(page, '<script type="application/ld+json">', "</script>"))
+        json_data = self._extract_jsonld(page)
         if isinstance(json_data, list):
             json_data = json_data[0]
         data = {
-            "title": text.unescape(json_data.get("headLine")),
+            "title": text.unescape(json_data.get("headline") or json_data.get("name")),
             "date": self.parse_datetime(
                 json_data.get("datePublished"),
                 format="%Y-%m-%dT%H:%M:%S%z",
             ),
             "article_id": self.article_id,
-            "post_url": json_data.get("mainEntityOfPage"),
+            "post_url": json_data.get("url"),
         }
         author = json_data.get("author")
         if author:
