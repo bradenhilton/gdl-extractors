@@ -1,6 +1,5 @@
 """Extractors for https://www.bntnews.co.kr/"""
 
-import json
 import re
 from http import HTTPStatus
 
@@ -15,6 +14,7 @@ class BntnewsExtractor(Extractor):
 
     category = "bntnews"
     root = "https://www.bntnews.co.kr"
+    browser = "chrome"
 
     def _get_best_image_url(self, url):
         return re.sub(
@@ -57,27 +57,35 @@ class BntnewsArticleExtractor(BntnewsExtractor):
         self.post_url = match.group(0)
 
     def metadata(self, page):
-        json_data = json.loads(text.extr(page, '<script type="application/ld+json">', "</script>"))
+        json_data = self._extract_jsonld(page)
+        article = next(entry for entry in json_data["@graph"] if entry.get("@type") == "NewsArticle")
+        author = article.get("author", {})
+        if isinstance(author, list):
+            author = author[0] if author else {}
         return {
-            "title": text.unescape(json_data.get("headline")),
-            "author": json_data.get("author", {}).get("name"),
+            "title": text.unescape(article.get("headline")),
+            "author": author.get("name"),
             "date": self.parse_datetime(
-                json_data.get("datePublished"),
-                format="%Y-%m-%d %H:%M:%S%z",
+                article.get("datePublished"),
+                format="%Y-%m-%dT%H:%M:%S%z",
             ),
             "article_id": self.article_id,
-            "post_url": json_data.get("mainEntityOfPage", {}).get("@id"),
+            "post_url": article.get("mainEntityOfPage", {}).get("@id"),
         }
 
     def items(self):
         page = self._call(self.post_url)
         data = self.metadata(page)
 
-        article_content = text.extr(page, '<div class="content">', '<div class="copyright">')
-        urls = [
-            self._get_best_image_url(text.ensure_http_scheme(text.extr(image, 'src="', '"')))
-            for image in text.extract_iter(article_content, "<img", ">")
-        ]
+        article_content = text.extr(page, '<div class="ab-content content">', "</article>")
+        urls = []
+        for image in text.extract_iter(article_content, "<img", ">"):
+            src = text.extr(image, 'src="', '"')
+            if not src or "/data/bnt/" not in src:
+                continue
+            if src.startswith("/"):
+                src = self.root + src
+            urls.append(self._get_best_image_url(src))
 
         yield Message.Directory, "", data
 
